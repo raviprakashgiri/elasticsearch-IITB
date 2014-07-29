@@ -1,0 +1,133 @@
+#!/bin/bash
+ 
+if [ -z $1 ] ; then
+echo "Please enter hostname"
+exit
+fi
+ 
+hostname=$1
+ 
+for index in events ; do
+ 
+curl -X DELETE "http://$hostname:9200/$index"
+curl -X PUT "http://$hostname:9200/$index" -d '{
+"index": {
+"number_of_shards": 1,
+"number_of_replicas": 0,
+"analysis": {
+"filter" : {
+"synonym" : {
+"type" : "synonym",
+"format" : "wordnet",
+"synonyms_path" : "wn_s.pl"
+}
+},
+"analyzer": {
+"content": {
+"type": "custom",
+"tokenizer": "standard",
+"filter": [
+"lowercase",
+"stop",
+"synonym",
+"kstem"
+]
+},
+"flat": {
+"type": "custom",
+"tokenizer": "keyword"
+}
+}
+}
+}
+}
+'
+ 
+echo
+curl -X PUT "http://$hostname:9200/$index/news/_mapping" -d '{
+"news": {
+"_all": {
+"enabled": false
+},
+"dynamic_templates": [
+{
+"entity_template": {
+"path_match": "Events.Entities.*.entity",
+"mapping": {
+"type": "String",
+"Analyzer": "flat"
+}
+}
+}
+],
+"properties": {
+"Events": {
+"type": "object",
+"properties": {
+"Event": {
+"type": "string",
+"store": "no",
+"Analyzer": "content"
+},
+"Entities": {
+"type": "object",
+"properties": {
+"Date": {
+"type": "object",
+"properties": {
+"ToDate": {
+"type": "date",
+"format": "dd-MM-yyyy HH:mm:ss||yyyy-MM-dd'\''T'\''HH:mm:ss.SSSZZ"
+},
+"FromDate": {
+"type": "date",
+"format": "dd-MM-yyyy HH:mm:ss||yyyy-MM-dd'\''T'\''HH:mm:ss.SSSZZ"
+}
+}
+}
+}
+},
+Sources: {
+"type": "object",
+properties: {
+parent: {
+"type": "string",
+"Analyzer": "flat"
+},
+source : {
+"type": "string",
+"Analyzer": "flat"
+}
+}
+}
+ 
+}
+},
+"Type": {
+"type": "string",
+"Analyzer": "flat"
+},
+"TimeStamp": {
+"type": "date",
+"format": "dd-MM-yyyy HH:mm:ss||yyyy-MM-dd'\''T'\''HH:mm:ss.SSSZZ"
+},
+"lastUpdated": {
+"type": "date",
+"format": "dd-MM-yyyy HH:mm:ss||yyyy-MM-dd'\''T'\''HH:mm:ss.SSSZZ"
+},
+"Feedback":{
+"type":"object",
+"properties":{
+"FeedbackDate":{
+"type":"date",
+"format" : "dd-MM-yyyy HH:mm:ss||yyyy-MM-dd'\''T'\''HH:mm:ss.SSSZZ"
+}
+}
+}
+}
+}
+}'
+ 
+echo
+ 
+done
