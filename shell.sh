@@ -1,22 +1,43 @@
-curl -XPUT "http://localhost:9200/rpg/" -d ' 
+PUT /my_index
 {
-    "settings": {
-        "analysis": {
-            "char_filter": {
-                "&_to_and": {
-                    "type":       "mapping",
-                    "mappings": [ "&=> and ", "lol=> laugh_loudly"]
-            }},
-            "filter": {
-                "my_stopwords": {
-                    "type":       "stop",
-                    "stopwords": [ "the", "a" ]
-            }},
-            "analyzer": {
-                "my_analyzer": {
-                    "type":         "custom",
-                    "char_filter":  [ "html_strip", "&_to_and" ],
-                    "tokenizer":    "standard",
-                    "filter":       [ "lowercase", "my_stopwords" ]
-            }}
-}}}'
+  "settings": {
+    "analysis": {
+      "char_filter": {
+        "&_to_and": {
+          "type": "mapping",
+          "mappings": [
+            "&=> and "
+          ]
+        }
+      },
+      "filter": {
+         "snowball": {
+                    "type" : "snowball",
+                    "language" : "English"
+                },
+        "my_stopwords": {
+          "type": "stop",
+          "stopwords": [
+            "the",
+            "a"
+          ]
+        }
+      },
+      "analyzer": {
+        "my_analyzer": {
+          "type": "custom",
+          "char_filter": [
+            "html_strip",
+            "&_to_and"
+          ],
+          "tokenizer": "standard",
+          "filter": [
+             "snowball",
+            "lowercase",
+            "my_stopwords"
+          ]
+        }
+      }
+    }
+  }
+}
